@@ -12,19 +12,19 @@ i = 0
 
 # need to loop through the big list
 while (i < len(big_number_list)):
-	# for each num in the list, calculate the product
-	# for this and the next number of adjacent digits
+    # for each num in the list, calculate the product
+    # for this and the next number of adjacent digits
     for j in range(i, i + adjacent_digits):
         if j >= len(big_number_list):
-        	# need to handle or error thrown when
-        	# reaching the end of the list
+            # need to handle or error thrown when
+            # reaching the end of the list
             break
         this_product *= int(big_number_list[j])
     # compare this product to the largest
     if this_product > largest_product:
-    	# this is the biggest product
+        # this is the biggest product
         largest_product = this_product
-    
+
     # reset this product
     this_product = 1
     # increase i for iteration

@@ -4,9 +4,9 @@ pali_list = []
 
 # Starting at 999, loop in reverse to 100
 for x in range(999, 100, -1):
-	# Sub loop from 999 in reverse
+    # Sub loop from 999 in reverse
     for y in range(999, 100, -1):
-    	# mutliply x and y
+        # mutliply x and y
         ans = x * y
         # convert to string for palidrome checks
         ans_string = str(ans)
@@ -15,7 +15,7 @@ for x in range(999, 100, -1):
         part2 = ans_string[3:]
 
         if part1 == part2[::-1]:
-        	# palidrome found so add to list    
+            # palidrome found so add to list    
             pali_list.append(ans)
 
 # print max value found
