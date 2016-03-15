@@ -37,7 +37,7 @@ def solveProblem():
 
 
    # loop through each of the grids to solve
-   for grid in grids[0:3]:
+   for grid in grids[2:3]:
 
       p = Puzzle(grid=grid)
       p.setCells()
@@ -47,25 +47,27 @@ def solveProblem():
       i = 0
       solved = False
 
-      while (i < 5 and not solved):
-         p.soleCandidate()      
+      while (i < 10 and not solved):
+         p.soleCandidate()
          
          if not p.solved():
             p.uniqueCandidate()
 
-            # if not p.solved(): 
-            #    p.nakedSubset() # this isn't working correctly?!
+            if not p.solved(): 
+               p.nakedSubset()
 
          solved = p.solved()
-         i += 1     
+         i += 1
 
 
-      # p.printCellsBySection()
-
-      print p.solved()
+      p.printCellsBySection()
       p.printGrid()
 
-      print len(p.cells)
+      p.hiddenSubset()
+
+      p.printGrid()
+
+      print i, len(p.cells)
 
 
 
@@ -112,8 +114,17 @@ class Puzzle:
       for section in sections:
          print 'SECTION:', section
          for cell in sections[section]:
-            print cell.x, cell.y, cell.possible_values
+            cell.printCell()
 
+         print '________________________'
+
+   def printCellsByRow(self):
+      rows = self.getCellsByRow()
+      for key, row in rows.iteritems():
+         print '[%s] ' % (key),
+         for cell in row:
+            print cell.x, cell.possible_values,
+         print ''
          print '________________________'
 
    def setCells(self):
@@ -164,6 +175,16 @@ class Puzzle:
                possible_values.remove(elm)
       return possible_values
 
+   def getCellsByRow(self):
+      # create the row array
+      rows = {k: [] for k in range(9)}
+      # loop through cells
+      for cell in self.cells:
+         rows[cell.y].append(cell)
+
+      return rows
+
+
    def solved(self):
       if len(self.cells) == 0:
          return True
@@ -193,18 +214,6 @@ class Puzzle:
 
       return sections
 
-   def checkSoleCandidate(self):
-      for cell in self.cells:
-         # get values for sets to compare
-         notInRow = self.getValuesNotInRow(cell)
-         notInColumn = self.getValuesNotInColumn(cell)
-         notInSection = self.getValuesNotInSection(cell)
-         possible_values = sorted(set(notInRow) & set(notInColumn) & set(notInSection))
-
-         cell.possible_values = possible_values
-      
-      return self.checkCellsForSingles()
-
 
    def soleCandidate(self):
 
@@ -213,7 +222,16 @@ class Puzzle:
 
       # want to loop until no more updates are made
       while updates > 0:
-         updates = self.checkSoleCandidate()
+         for cell in self.cells:
+            # get values for sets to compare
+            notInRow = self.getValuesNotInRow(cell)
+            notInColumn = self.getValuesNotInColumn(cell)
+            notInSection = self.getValuesNotInSection(cell)
+            possible_values = sorted(set(notInRow) & set(notInColumn) & set(notInSection))
+
+            cell.possible_values = possible_values
+         
+         updates = self.checkCellsForSingles()
 
  
 
@@ -248,6 +266,90 @@ class Puzzle:
 
    def blockInteraction(self):
       pass
+
+
+   def swordfish(self):
+      # first need to identify the swordfish pattern.
+      # for cell in self.cells:
+      pass
+
+
+   def hiddenSubset(self):
+      # puzzle 3 row 3 
+      # cell 6 3 should be 2
+
+      # argh?! The below logic is flawed!
+
+      self.printCellsByRow()
+
+      # get the cells by rows
+      rows = self.getCellsByRow()
+      # loop through each row
+      for key, row in rows.iteritems():
+
+         # for testing need to remove
+         if key == 4:
+
+            # loop through each cell in the row
+            for this_cell in row:
+               # want to check possible values against the rest of the row
+               for that_cell in row:
+                  # don't check against itself
+                  if this_cell != that_cell:
+                     target_list = list(set(this_cell.possible_values) - set(that_cell.possible_values))
+                     if len(target_list) == 1:
+
+                        print this_cell.x, target_list, this_cell.possible_values, that_cell.possible_values
+
+                        # found a hidden subset, so update the values
+                        this_cell.possible_values = target_list
+                        # update the grid
+                        self.checkCellsForSingles()
+                        # remove from the row
+                        try:
+                           row.remove(this_cell)
+                        except ValueError:
+                           pass
+
+
+
+
+
+      # # loop through each cell
+      # for cell in self.cells:
+      #    row_dict = {}
+      #    col_dict = {}
+
+      #    row_cells = []
+
+      #    # loop through each cell and add
+      #    # add the cells in the same row
+      #    # or col to the list
+      #    for c in self.cells:
+      #       # if c.x == cell.x:
+      #       #    col_dict[c.y] = c.possible_values
+      #       if c.y == cell.y:
+      #          # row_dict[c.x] = c.possible_values
+      #          row_cells.append(c)
+
+
+      #    # need to remove this line, but for testing
+      #    # for now
+      #    if cell.x == 2 and cell.y == 3:
+      #       # loop through each value in the row
+      #       for key, value in row_dict.iteritems():
+      #          # want to check against the rest of the row
+      #          for k, v in row_dict.iteritems():
+      #             # don't check against itself
+      #             if key != k:
+      #                # get the difference between the sets
+      #                target_set = set(value) - set(v)
+      #                # check for length 1 of target set
+      #                if len(target_set) == 1:
+
+      #                   print cell.y, key, list(target_set)[0]
+
+               
 
 
 
@@ -332,10 +434,12 @@ class Puzzle:
                for value in duplicate_values:
                   # loop through each cell
                   for cell in self.cells:
-                     if cell.y == index and value in cell.possible_values:
+                     if cell.y == index and value in cell.possible_values and cell not in sublist:
                         cell.possible_values.remove(value)
 
-      
+
+
+
       # now loop through and find any possible value lists that are length 
       # 1 and update the grid.
       self.checkCellsForSingles()
