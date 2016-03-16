@@ -3,6 +3,8 @@
 # need to create each of the techniques
 # https://www.kristanix.com/sudokuepic/sudoku-solving-techniques.php
 
+from itertools import chain
+
 
 def solveProblem():
    
@@ -47,7 +49,7 @@ def solveProblem():
       i = 0
       solved = False
 
-      while (i < 10 and not solved):
+      while (i < 20 and not solved):
          p.soleCandidate()
          
          if not p.solved():
@@ -56,16 +58,21 @@ def solveProblem():
             if not p.solved(): 
                p.nakedSubset()
 
+               if not p.solved():
+                  p.checkCellsByRow()
+
+                  if not p.solved():
+                     p.checkCellsByColumn()
+                  
          solved = p.solved()
          i += 1
 
 
+
       p.printCellsBySection()
+      p.printCellsByColumn()
       p.printGrid()
 
-      p.hiddenSubset()
-
-      p.printGrid()
 
       print i, len(p.cells)
 
@@ -127,6 +134,15 @@ class Puzzle:
          print ''
          print '________________________'
 
+   def printCellsByColumn(self):
+      cols = self.getCellsByRow()
+      for key, col in cols.iteritems():
+         print '[%s] ' % (key),
+         for cell in col:
+            print cell.y, cell.possible_values,
+         print ''
+         print '________________________'
+
    def setCells(self):
       """
       This functions returns all the cells that have zero
@@ -184,6 +200,14 @@ class Puzzle:
 
       return rows
 
+   def getCellsByColumn(self):
+      # create the column array
+      cols = {k: [] for k in range(9)}
+      # loop through cells
+      for cell in self.cells:
+         cols[cell.x].append(cell)
+
+      return cols
 
    def solved(self):
       if len(self.cells) == 0:
@@ -274,80 +298,78 @@ class Puzzle:
       pass
 
 
-   def hiddenSubset(self):
-      # puzzle 3 row 3 
-      # cell 6 3 should be 2
-
-      # argh?! The below logic is flawed!
-
-      self.printCellsByRow()
-
+   def checkCellsByRow(self):
+      # Used this solution for identifying unique values
+      # http://stackoverflow.com/questions/17035577/unique-features-between-multiple-lists
+      
       # get the cells by rows
       rows = self.getCellsByRow()
+
+      # set variables
+      all_possible_value_lists = []
+
       # loop through each row
       for key, row in rows.iteritems():
+         # skip empty rows
+         if len(row) == 0:
+            continue
 
-         # for testing need to remove
-         if key == 4:
+         # first add all possible values to a list
+         for cell in row:
+            all_possible_value_lists.append(cell.possible_values)
 
-            # loop through each cell in the row
-            for this_cell in row:
-               # want to check possible values against the rest of the row
-               for that_cell in row:
-                  # don't check against itself
-                  if this_cell != that_cell:
-                     target_list = list(set(this_cell.possible_values) - set(that_cell.possible_values))
-                     if len(target_list) == 1:
+         # loop again through row
+         for cell in row:
+            # Combine all the lists into one
+            super_list = list(chain(*all_possible_value_lists))
+            # Remove the items from the list under consideration
+            for x in cell.possible_values:
+               super_list.remove(x)
+            # Get the unique items remaining in the combined list
+            super_set = set(super_list)
+            # Compute the unique items in this list and print them
+            uniques = set(cell.possible_values) - super_set
+            if len(uniques) == 1 and len(cell.possible_values) == 1:
+               self.grid[cell.y][cell.x].possible_values = list(uniques)
+               self.cells.remove(cell)
+         
 
-                        print this_cell.x, target_list, this_cell.possible_values, that_cell.possible_values
+   def checkCellsByColumn(self):
+      # Used this solution for identifying unique values
+      # http://stackoverflow.com/questions/17035577/unique-features-between-multiple-lists
+      
+      # get the cells by cols
+      cols = self.getCellsByColumn()
 
-                        # found a hidden subset, so update the values
-                        this_cell.possible_values = target_list
-                        # update the grid
-                        self.checkCellsForSingles()
-                        # remove from the row
-                        try:
-                           row.remove(this_cell)
-                        except ValueError:
-                           pass
+      # set variables
+      all_possible_value_lists = []
 
+      # loop through each col
+      for key, col in cols.iteritems():
+         # skip empty cols
+         if len(col) == 0:
+            continue
 
+         # first add all possible values to a list
+         for cell in col:
+            all_possible_value_lists.append(cell.possible_values)
 
+         # loop again through col
+         for cell in col:
+            # Combine all the lists into one
+            super_list = list(chain(*all_possible_value_lists))
+            # Remove the items from the list under consideration
+            for x in cell.possible_values:
+               super_list.remove(x)
+            # Get the unique items remaining in the combined list
+            super_set = set(super_list)
+            # Compute the unique items in this list and print them
+            uniques = set(cell.possible_values) - super_set
+            if len(uniques) == 1 and len(cell.possible_values) == 1:
+               self.grid[cell.y][cell.x].possible_values = list(uniques)
+               self.cells.remove(cell)
+         
 
-
-      # # loop through each cell
-      # for cell in self.cells:
-      #    row_dict = {}
-      #    col_dict = {}
-
-      #    row_cells = []
-
-      #    # loop through each cell and add
-      #    # add the cells in the same row
-      #    # or col to the list
-      #    for c in self.cells:
-      #       # if c.x == cell.x:
-      #       #    col_dict[c.y] = c.possible_values
-      #       if c.y == cell.y:
-      #          # row_dict[c.x] = c.possible_values
-      #          row_cells.append(c)
-
-
-      #    # need to remove this line, but for testing
-      #    # for now
-      #    if cell.x == 2 and cell.y == 3:
-      #       # loop through each value in the row
-      #       for key, value in row_dict.iteritems():
-      #          # want to check against the rest of the row
-      #          for k, v in row_dict.iteritems():
-      #             # don't check against itself
-      #             if key != k:
-      #                # get the difference between the sets
-      #                target_set = set(value) - set(v)
-      #                # check for length 1 of target set
-      #                if len(target_set) == 1:
-
-      #                   print cell.y, key, list(target_set)[0]
 
                
 
