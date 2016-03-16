@@ -74,7 +74,7 @@ def solveProblem():
       p.printGrid()
 
 
-      print i, len(p.cells)
+      print i, len(p.cells), p.legalSolution()
 
 
 
@@ -191,28 +191,49 @@ class Puzzle:
                possible_values.remove(elm)
       return possible_values
 
-   def getCellsByRow(self):
-      # create the row array
-      rows = {k: [] for k in range(9)}
-      # loop through cells
-      for cell in self.cells:
-         rows[cell.y].append(cell)
-
-      return rows
-
-   def getCellsByColumn(self):
-      # create the column array
-      cols = {k: [] for k in range(9)}
-      # loop through cells
-      for cell in self.cells:
-         cols[cell.x].append(cell)
-
-      return cols
 
    def solved(self):
       if len(self.cells) == 0:
          return True
       return False
+
+   def legalSolution(self):
+      legal_values = range(1, 10)
+      # first check rows
+      for y in range(0, 9):
+         row_values = []
+         for x in range(0, 9):
+            row_values.append(self.grid[y][x])
+         if not sorted(row_values) == legal_values:
+            return False
+
+      # then check cols
+      for x in range(0, 9):
+         col_values = []
+         for y in range(0, 9):
+            col_values.append(self.grid[y][x])
+         if not sorted(col_values) == legal_values:
+            return False
+
+      # finally check sections
+      sections = {k: [] for k in range(0, 9)}
+      for y in range(0, 9):
+         for x in range(0, 9):
+            sections[self.calcSectionNumber(x, y)].append(self.grid[y][x])
+
+      for key, value in sections.iteritems():
+         if not sorted(value) == legal_values:
+            return False
+
+      return True
+
+
+
+   def calcSectionNumber(self, x, y):
+      x_starting_from = (x // 3) * 3
+      y_starting_from = (y // 3) * 3
+
+      return ((x_starting_from + 3) / 3) + y_starting_from - 1
 
 
    def checkCellsForSingles(self):
@@ -226,6 +247,19 @@ class Puzzle:
             updates += 1
       return updates
 
+   def getCellsByRow(self):
+      rows = {k: [] for k in range(9)}
+      for cell in self.cells:
+         rows[cell.y].append(cell)
+
+      return rows
+
+   def getCellsByColumn(self):
+      cols = {k: [] for k in range(9)}
+      for cell in self.cells:
+         cols[cell.x].append(cell)
+
+      return cols
 
 
    def getCellsBySection(self):
