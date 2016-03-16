@@ -268,7 +268,7 @@ class Puzzle:
 
       # separate the cells into the sections they belong too
       for cell in self.cells:
-         sections[cell.getSectionNumber()].append(cell)
+         sections[self.calcSectionNumber(cell.x, cell.y)].append(cell)
 
       return sections
 
@@ -514,11 +514,6 @@ class Cell:
       self.y = y
       self.possible_values = []
 
-   def getSectionNumber(self):
-      x_starting_from = (self.x // 3) * 3
-      y_starting_from = (self.y // 3) * 3
-
-      return ((x_starting_from + 3) / 3) + y_starting_from - 1
 
    def printCell(self):
       print '[%s][%s] : %s' % (self.x, self.y, self.possible_values)
