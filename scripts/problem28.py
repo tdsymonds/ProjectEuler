@@ -1,4 +1,4 @@
-# https://projecteuler.net/problem=27
+# https://projecteuler.net/problem=28
 
 # first need to calculate how many diagonal numbers
 # make up a 1001 by 1001 spiral.
