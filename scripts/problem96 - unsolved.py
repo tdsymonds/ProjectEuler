@@ -45,36 +45,12 @@ def solveProblem():
       p.setCells()
       # p.printGrid()
       
-      # try each of the techniques to solve
-      i = 0
-      solved = False
-
-      while (i < 20 and not solved):
-         p.soleCandidate()
-         
-         if not p.solved():
-            p.uniqueCandidate()
-
-            if not p.solved(): 
-               p.nakedSubset()
-
-               if not p.solved():
-                  p.checkCellsByRow()
-
-                  if not p.solved():
-                     p.checkCellsByColumn()
-                  
-         solved = p.solved()
-         i += 1
-
-
+      p.solve()
 
       p.printCellsBySection()
-      p.printCellsByColumn()
       p.printGrid()
 
-
-      print i, len(p.cells), p.legalSolution()
+      print len(p.cells), p.legalSolution()
 
 
 
@@ -89,6 +65,7 @@ def solveProblem():
 
 
 
+
 class Puzzle:
    """
    A class to represet a soduku puzzle providing functionality
@@ -98,6 +75,19 @@ class Puzzle:
    def __init__(self, grid):
       self.grid = grid
       self.cells = []
+
+   def setCells(self):
+      """
+      This functions returns all the cells that have zero
+      as the value, i.e. the ones we need to find.
+      """
+      cell_list = []
+      for y in range(0, 9):
+         for x in range(0, 9):
+            target = self.grid[y][x]
+            if target == 0:
+               cell_list.append(Cell(x=x, y=y))
+      self.cells = cell_list
 
    def printGrid(self):
       """
@@ -135,27 +125,14 @@ class Puzzle:
          print '________________________'
 
    def printCellsByColumn(self):
-      cols = self.getCellsByRow()
+      cols = self.getCellsByColumn()
       for key, col in cols.iteritems():
          print '[%s] ' % (key),
          for cell in col:
             print cell.y, cell.possible_values,
          print ''
          print '________________________'
-
-   def setCells(self):
-      """
-      This functions returns all the cells that have zero
-      as the value, i.e. the ones we need to find.
-      """
-      cell_list = []
-      for y in range(0, 9):
-         for x in range(0, 9):
-            target = self.grid[y][x]
-            if target == 0:
-               cell_list.append(Cell(x=x, y=y))
-      self.cells = cell_list
-   
+  
    def getValuesNotInRow(self, cell):
       """
       Get the possible values that are not in the row
@@ -190,7 +167,6 @@ class Puzzle:
             if elm in possible_values:
                possible_values.remove(elm)
       return possible_values
-
 
    def solved(self):
       if len(self.cells) == 0:
@@ -227,14 +203,11 @@ class Puzzle:
 
       return True
 
-
-
    def calcSectionNumber(self, x, y):
       x_starting_from = (x // 3) * 3
       y_starting_from = (y // 3) * 3
 
       return ((x_starting_from + 3) / 3) + y_starting_from - 1
-
 
    def checkCellsForSingles(self):
       updates = 0
@@ -261,7 +234,6 @@ class Puzzle:
 
       return cols
 
-
    def getCellsBySection(self):
       # first split the possible cells into sections:
       sections = {k: [] for k in range(9)}
@@ -271,7 +243,6 @@ class Puzzle:
          sections[self.calcSectionNumber(cell.x, cell.y)].append(cell)
 
       return sections
-
 
    def soleCandidate(self):
 
@@ -291,9 +262,9 @@ class Puzzle:
          
          updates = self.checkCellsForSingles()
 
- 
-
    def uniqueCandidate(self):
+      changed = False
+
       # loop through each possible value in the section and find 
       # possible values only there once.
       sections = self.getCellsBySection()
@@ -317,25 +288,19 @@ class Puzzle:
             if len(values[value]) == 1:
                # only one possible value so update the grid and 
                # remove the cell from the possible values
+               changed = True
                cell = values[value][0]
                self.grid[cell.y][cell.x] = value
-               self.cells.remove(cell)
+               self.cells.remove(cell) 
 
-
-   def blockInteraction(self):
-      pass
-
-
-   def swordfish(self):
-      # first need to identify the swordfish pattern.
-      # for cell in self.cells:
-      pass
-
+      return changed      
 
    def checkCellsByRow(self):
       # Used this solution for identifying unique values
       # http://stackoverflow.com/questions/17035577/unique-features-between-multiple-lists
       
+      changed = False
+
       # get the cells by rows
       rows = self.getCellsByRow()
 
@@ -364,14 +329,18 @@ class Puzzle:
             # Compute the unique items in this list and print them
             uniques = set(cell.possible_values) - super_set
             if len(uniques) == 1 and len(cell.possible_values) == 1:
+               changed = True
                self.grid[cell.y][cell.x].possible_values = list(uniques)
                self.cells.remove(cell)
-         
 
+      return changed
+         
    def checkCellsByColumn(self):
       # Used this solution for identifying unique values
       # http://stackoverflow.com/questions/17035577/unique-features-between-multiple-lists
       
+      changed = False
+
       # get the cells by cols
       cols = self.getCellsByColumn()
 
@@ -400,16 +369,15 @@ class Puzzle:
             # Compute the unique items in this list and print them
             uniques = set(cell.possible_values) - super_set
             if len(uniques) == 1 and len(cell.possible_values) == 1:
+               changed = True
                self.grid[cell.y][cell.x].possible_values = list(uniques)
                self.cells.remove(cell)
+
+      return changed
          
-
-
-               
-
-
-
    def nakedSubset(self):
+
+      changed = False
 
       # loop through each cell and check against all other cells to identify duplicates
       # and assign to the duplicates list
@@ -477,6 +445,7 @@ class Puzzle:
                   # loop through each cell
                   for cell in self.cells:
                      if cell.x == index and value in cell.possible_values and cell not in sublist:
+                        changed = True
                         cell.possible_values.remove(value)
 
          # and repeat for y list
@@ -491,6 +460,7 @@ class Puzzle:
                   # loop through each cell
                   for cell in self.cells:
                      if cell.y == index and value in cell.possible_values and cell not in sublist:
+                        changed = True
                         cell.possible_values.remove(value)
 
 
@@ -499,6 +469,213 @@ class Puzzle:
       # now loop through and find any possible value lists that are length 
       # 1 and update the grid.
       self.checkCellsForSingles()
+
+      return changed
+
+   def xWing(self):
+      # See www.sudokuwiki.org/x_wing_strategy
+      # this is not working... getting unexpected results :s
+      changed = False
+
+
+      cells_by_row = list_to_iterate = self.getCellsByRow()
+      cells_by_col = self.getCellsByColumn()
+
+      # for each possible value 
+      for value in range(1, 10):
+         # reset variables
+         value_list = []
+         xwing = []
+         xwing_found = False
+
+         # loop through each row / col
+         for index, sublist in list_to_iterate.iteritems():
+            # reset variable
+            cell_list = []
+            # for each cell in the row / col
+            for cell in sublist:
+               if value in cell.possible_values:
+                  # value is in cell
+                  cell_list.append(cell)
+
+            # if two elms in a row then add to value list
+            if len(cell_list) == 2:
+               value_list.append(cell_list)
+         
+
+
+         # is there an x wing?
+         if len(value_list) > 1:
+
+            j = 1
+
+            # loop through each row/col in the value list
+            for sublist in value_list:
+
+               # assign top right and left to variables
+               top_left = sublist[0]
+               top_right = sublist[1]
+
+               # just need to check values against rest of value list
+               for i in range(j, len(value_list)):
+                  next_row = value_list[i]
+
+                  if next_row[0].x == top_left.x and next_row[1].x == top_right.x:
+                     # we have an xwing!
+                     xwing_found = True
+                     # build the xwing grid
+                     xwing.append([top_left, top_right])
+                     xwing.append([next_row[0], next_row[1]])
+
+               j += 1
+
+
+         if xwing_found:
+            # woo!
+            # loop through all cells in both rows and remove the 
+            # possible values of value
+            top_row = xwing[0][0].y
+            bottom_row = xwing[1][1].y
+            left_col = xwing[0][0].x
+            right_col = xwing[1][1].x
+            
+            for i, r in enumerate([left_col, right_col]):
+               for c in cells_by_col[r]:
+                  # don't touch a cell in the xwing
+                  if c not in xwing[i]:
+                     if value in c.possible_values:
+                        # c.printCell()
+                        changed = True
+                        c.possible_values.remove(value)
+            
+
+
+
+      self.checkCellsForSingles()
+
+      return changed
+
+   def swordfish(self):
+      # this needs some work. Need to improve my understanding
+      # of this technique, as not 100% this is the correct approach.
+      # Going to try an x-wing as this is an extension of that.
+
+      # first need to identify the swordfish pattern.
+
+      cells_by_row = self.getCellsByRow()
+      cells_by_col = self.getCellsByColumn()
+
+      # loop through each cell
+      for cell in self.cells:
+         # for each value in the possible values
+         for value in cell.possible_values:
+            # intialise variables
+            cell_list = [cell]
+            # failed_list = []
+            value_found = True
+            swordfish_found = False
+            this_cell = cell
+
+            while value_found and not swordfish_found:
+
+               value_found = False
+
+               # first check the row
+               for row_cell in cells_by_row[this_cell.y]:
+                  # skip if the same cell
+                  if row_cell == this_cell:
+                     continue
+
+                  # is value in row cells values?
+                  if value in row_cell.possible_values:
+                     # move this cell along to next cell
+                     this_cell = row_cell
+                     # set value found as true
+                     value_found = True
+                     
+                     # check to see if the swordfish has complete
+                     if this_cell == cell:
+                        swordfish_found = True
+                     else:
+                        cell_list.append(row_cell)
+
+                     # break the loop
+                     break
+
+               if not value_found:
+                  # todo: need to pop last element
+                  # and try another route. For now
+                  # ignoring this complication
+                  continue
+               
+               if not swordfish_found:
+
+                  # check column of new cell
+                  for col_cell in cells_by_col[this_cell.x]:
+                     # skip if the same cell 
+                     if col_cell == this_cell:
+                        continue
+
+                     # is value in col cells values
+                     if value in col_cell.possible_values:
+                        # move this cell along to next cell
+                        this_cell = col_cell
+                        # set value found as true
+                        value_found = True
+                        
+                        # check to see if the swordfish has complete
+                        if this_cell == cell:
+                           swordfish_found = True
+                        else:
+                           cell_list.append(col_cell)
+
+                        # break the loop
+                        break
+
+                  if not value_found:
+                     # same as above todo
+                     continue
+               
+
+            if swordfish_found:
+
+               print 'Value: %s and cell length: %s'  % (value, len(cell_list))
+               for c in cell_list:
+                  c.printCell()
+               print '________________________'
+
+   def solve(self, i=0):
+      """
+      Will execute each of the techniques
+      and if changed will call itself
+      """
+      # increment recusion counter
+      i+=1
+
+      # set max recursion
+      if i == 200:
+         # safeguard to handle recusion error
+         return False
+
+      if self.solved():
+         # base case for recursion
+         # if solved terminate
+         return True
+
+      self.soleCandidate()
+
+      if self.uniqueCandidate():
+         self.solve(i)
+      if self.nakedSubset():
+         self.solve(i)
+      if self.checkCellsByRow():
+         self.solve(i)
+      if self.checkCellsByColumn():
+         self.solve(i)
+      if self.xWing():
+         self.solve(i)
+
+      return False
 
 
 
